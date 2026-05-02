@@ -1,0 +1,117 @@
+<!-- postdetail.html -->
+<!-- Dot2Dot 广播详情页 / 全部历史页 - 静态内容完整保留，JS 只负责动态内容填充 -->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>•✉• Dot2Dot · 广播详情 / 全部历史</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; background-color: #e8e8e0; color: #1a1a1a; line-height: 1.5; }
+        .container { max-width: 800px; margin: 2rem auto; padding: 2rem; background: #ffffff; border-radius: 16px; border: 1px solid #d0d0ca; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .top-bar { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e0e0dc; }
+        .top-nav { display: flex; gap: 2rem; }
+        .top-nav a { text-decoration: none; color: #8a8a8a; font-weight: 500; padding-bottom: 0.5rem; border-bottom: 2px solid transparent; cursor: pointer; }
+        .top-nav a.active { color: #2c5f2d; border-bottom-color: #2c5f2d; }
+        .top-nav a:hover { color: #2c5f2d; }
+        .back-to-square { color: #2c5f2d; text-decoration: none; font-size: 0.85rem; cursor: pointer; }
+        .back-to-square:hover { text-decoration: underline; }
+        .broadcast-meta { font-size: 0.8rem; color: #8a8a8a; margin-bottom: 0.5rem; }
+        .broadcast-tag { display: inline-block; background-color: #e6f0e6; color: #2c5f2d; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 1rem; }
+        .broadcast-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; }
+        .broadcast-content { font-size: 1rem; line-height: 1.6; color: #2b2b2b; white-space: pre-wrap; margin-bottom: 2rem; }
+        .user-link { text-decoration: none; color: #2c5f2d; font-weight: 500; cursor: pointer; }
+        .user-link:hover { text-decoration: underline; }
+        .related-link { text-decoration: none; color: #2c5f2d; cursor: pointer; }
+        .related-link:hover { text-decoration: underline; }
+        .related-block { background-color: #fafaf8; border-radius: 12px; padding: 1rem; margin-top: 1rem; }
+        .related-title { font-size: 0.8rem; text-transform: uppercase; color: #8a8a8a; margin-bottom: 0.75rem; letter-spacing: 0.5px; }
+        .related-item { border-left: 2px solid #e0e0dc; padding-left: 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem; }
+        .related-item:last-child { margin-bottom: 0; }
+        .broadcast-item { padding: 1rem 0; border-bottom: 1px solid #f0f0ea; }
+        .broadcast-item:last-child { border-bottom: none; }
+        .broadcast-item .broadcast-meta { font-size: 0.75rem; margin-bottom: 0.3rem; }
+        .broadcast-item .broadcast-tag { font-size: 0.7rem; margin-bottom: 0.5rem; }
+        .broadcast-item .broadcast-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; cursor: pointer; color: #2c5f2d; }
+        .broadcast-item .broadcast-title:hover { text-decoration: underline; }
+        .broadcast-item .broadcast-summary { font-size: 0.85rem; color: #4a4a4a; }
+        .loading { text-align: center; padding: 2rem; color: #8a8a8a; }
+        .error { text-align: center; padding: 2rem; color: #c0392b; }
+        .empty { text-align: center; padding: 2rem; color: #8a8a8a; }
+        .text-small { font-size: 0.8rem; color: #6b6b6b; }
+        .info-panel { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e0e0dc; color: #a0a0a0; font-size: 0.7rem; line-height: 1.5; }
+        .info-panel p { margin-bottom: 0.5rem; }
+        .info-panel .en { margin-top: 0.25rem; }
+        
+        /* 视图切换控制 */
+        #post-view { display: block; }
+        #mypost-view { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- 广播详情视图 -->
+        <div id="post-view">
+            <div class="top-bar">
+                <div class="top-nav">
+                    <a href="#" data-view="post" class="active">广播详情 | Post Detail</a>
+                    <a href="#" data-view="mypost">全部历史 | All History</a>
+                </div>
+                <a href="#" class="back-to-square" data-return>返回广场 | Return</a>
+            </div>
+            
+            <!-- 动态内容区域 -->
+            <div id="post-detail-container">
+                <div class="loading">加载中...</div>
+            </div>
+            
+            <div class="info-panel">
+                <p>平台现有机制</p>
+                <p>* 平台没有审查和禁止特定信息，但已调用AI解析语义，将价值观不符的信息往下沉、少展示。这是概率问题，如果总体输入里优质信息不多，您仍会看得到有误导倾向的信息，请保留戒心。</p>
+                <p>* 平台已禁用图片展示，这样可从源头上大幅减少诱惑。已在算法上鼓励以兴趣爱好为纽带建立点对点连接，但Dot2Dot只是起点，走向哪里靠个人，靠缘分。别急着得到什么，我们就能大幅免疫。</p>
+                <div class="en">
+                    <p>Dot2Dot Algorithm:</p>
+                    <p>* No censorship or blocking of specific content. However, AI analyzes semantics and demotes value-inconsistent posts — they appear less often. This is probabilistic. If the overall input lacks quality information, you may still see misleading content. Stay vigilant.</p>
+                    <p>* Images are disabled — drastically reducing temptations at the source. The algorithm encourages interest-based, peer-to-peer connections. But that's just the starting point. Where it goes depends on you, and on fate. Don't rush for outcomes — that's how we stay largely immune.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 全部历史视图 -->
+        <div id="mypost-view">
+            <div class="top-bar">
+                <div class="top-nav">
+                    <a href="#" data-view="post">广播详情 | Post Detail</a>
+                    <a href="#" data-view="mypost" class="active">全部历史 | All History</a>
+                </div>
+                <a href="#" class="back-to-square" data-return>返回广场 | Return</a>
+            </div>
+            
+            <div id="user-header" class="header">
+                <h1 id="mypost-nickname" style="font-size:1.3rem; font-weight:500; margin-bottom:1rem;">加载中...</h1>
+            </div>
+            
+            <!-- 动态内容区域 -->
+            <div id="mypost-list-container">
+                <div class="loading">加载中...</div>
+            </div>
+            
+            <div class="info-panel">
+                <p>平台现有机制</p>
+                <p>* 用户每天可以发出N条广播，但平台每天对每个用户只新增一条展示，其余放在队列里依次展示在平台。Dot2Dot是慢车马，是这氛围，也能省资源。</p>
+                <p>* 用户的第21条广播被展示出来时，他的第1条会被删除，也就是FIFO，他的展示上限是20条。久远事，不留痕。</p>
+                <div class="en">
+                    <p>Dot2Dot Algorithm:</p>
+                    <p>* Each user can send unlimited broadcasts daily, but the platform only surfaces one per user per day. The rest go into a queue and are shown over time. Dot2Dot moves at a slow pace — it's the vibe, and it saves resources.</p>
+                    <p>* When a user's 21st broadcast is shown, their 1st is deleted. FIFO, 20 posts max — old things leave no trace.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script src="postdetail.js"></script>
+</body>
+</html>

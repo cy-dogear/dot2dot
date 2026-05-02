@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>•✉• Dot2Dot · 广播详情 / 全部历史</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; background-color: #e8e8e0; color: #1a1a1a; line-height: 1.5; }
+        .container { max-width: 800px; margin: 2rem auto; padding: 2rem; background: #ffffff; border-radius: 16px; border: 1px solid #d0d0ca; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .top-bar { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e0e0dc; }
+        .top-nav { display: flex; gap: 2rem; }
+        .top-nav a { text-decoration: none; color: #8a8a8a; font-weight: 500; padding-bottom: 0.5rem; border-bottom: 2px solid transparent; cursor: pointer; }
+        .top-nav a.active { color: #2c5f2d; border-bottom-color: #2c5f2d; }
+        .top-nav a:hover { color: #2c5f2d; }
+        .back-to-square { color: #2c5f2d; text-decoration: none; font-size: 0.85rem; cursor: pointer; }
+        .back-to-square:hover { text-decoration: underline; }
+        .broadcast-meta { font-size: 0.8rem; color: #8a8a8a; margin-bottom: 0.5rem; }
+        .broadcast-tag { display: inline-block; background-color: #e6f0e6; color: #2c5f2d; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 1rem; }
+        .broadcast-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; }
+        .broadcast-content { font-size: 1rem; line-height: 1.6; color: #2b2b2b; white-space: pre-wrap; margin-bottom: 2rem; }
+        .user-link { text-decoration: none; color: #2c5f2d; font-weight: 500; cursor: pointer; }
+        .user-link:hover { text-decoration: underline; }
+        .related-link { text-decoration: none; color: #2c5f2d; cursor: pointer; }
+        .related-link:hover { text-decoration: underline; }
+        .related-block { background-color: #fafaf8; border-radius: 12px; padding: 1rem; margin-top: 1rem; }
+        .related-title { font-size: 0.8rem; text-transform: uppercase; color: #8a8a8a; margin-bottom: 0.75rem; letter-spacing: 0.5px; }
+        .related-item { border-left: 2px solid #e0e0dc; padding-left: 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem; }
+        .related-item:last-child { margin-bottom: 0; }
+        .broadcast-item { padding: 1rem 0; border-bottom: 1px solid #f0f0ea; }
+        .broadcast-item:last-child { border-bottom: none; }
+        .broadcast-item .broadcast-meta { font-size: 0.75rem; margin-bottom: 0.3rem; }
+        .broadcast-item .broadcast-tag { font-size: 0.7rem; margin-bottom: 0.5rem; }
+        .broadcast-item .broadcast-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; cursor: pointer; color: #2c5f2d; }
+        .broadcast-item .broadcast-title:hover { text-decoration: underline; }
+        .broadcast-item .broadcast-summary { font-size: 0.85rem; color: #4a4a4a; }
+        .loading { text-align: center; padding: 2rem; color: #8a8a8a; }
+        .error { text-align: center; padding: 2rem; color: #c0392b; }
+        .empty { text-align: center; padding: 2rem; color: #8a8a8a; }
+        .text-small { font-size: 0.8rem; color: #6b6b6b; }
+        .info-panel { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e0e0dc; color: #a0a0a0; font-size: 0.7rem; line-height: 1.5; }
+        .info-panel p { margin-bottom: 0.5rem; }
+        .info-panel .en { margin-top: 0.25rem; }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="loading">加载中...</div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        
+        let allUsers = [];
+        let allMessages = [];
+        let pageUserId = null;      // URL 中的 user 参数，决定当前页面属于谁
+        let currentMsgId = null;
+        let currentView = 'post';   // 'post' or 'mypost'
+
+        function getUrlParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        function getNickname(userId) {
+            const user = allUsers.find(u => u.user_id === userId);
+            return user ? user.nickname : (userId ? userId.split('@')[0] : '用户');
+        }
+
+        function parseMessageTag(messageTag) {
+            if (!messageTag) return { tag: '' };
+            const match = messageTag.match(/^(.*?)\s*\[(\d),(\d),(\d),(\d)\]$/);
+            if (match) {
+                return { tag: match[1] };
+            }
+            return { tag: messageTag };
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        function openDetailPage(messageId) {
+            window.open(`./postdetail.html?msg=${encodeURIComponent(messageId)}&user=${encodeURIComponent(pageUserId)}`, '_blank');
+        }
+
+        function renderBroadcastItem(message) {
+            const userNick = getNickname(message.user_id);
+            const parsed = parseMessageTag(message.message_tag);
+            const summary = (message.message_content || '').substring(0, 80) + ((message.message_content || '').length > 80 ? '...' : '');
+            const dateStr = message.message_id.substring(0, 8);
+            // const seqStr = message.message_id.substring(9);  // 已注释，不显示序号
+            
+            return `
+                <div class="broadcast-item" data-msg-id="${message.message_id}">
+                    <div class="broadcast-meta">${dateStr}  · <a href="#" class="user-link" data-user="${escapeHtml(message.user_id)}">${escapeHtml(userNick)}</a></div>
+                    <div class="broadcast-tag">${escapeHtml(parsed.tag)}</div>
+                    <div class="broadcast-title" data-msg-id="${message.message_id}">${escapeHtml(message.message_subject || '')}</div>
+                    <div class="broadcast-summary">${escapeHtml(summary)}</div>
+                </div>
+            `;
+        }
+
+        async function loadMypostView() {
+            if (!pageUserId) {
+                document.getElementById('app').innerHTML = '<div class="error">缺少用户信息</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/user/${encodeURIComponent(pageUserId)}/messages`);
+                const messages = await response.json();
+                messages.sort((a, b) => b.message_id.localeCompare(a.message_id));
+                
+                const nickname = getNickname(pageUserId);
+                
+                let contentHtml = '';
+                if (messages.length === 0) {
+                    contentHtml = '<div class="empty">暂无广播</div>';
+                } else {
+                    contentHtml = messages.map(msg => renderBroadcastItem(msg)).join('');
+                }
+                
+                const html = `
+                    <div class="top-bar">
+                        <div class="top-nav">
+                            <a href="#" data-view="post">广播详情 | Post Detail</a>
+                            <a href="#" data-view="mypost" class="active">全部历史 | All History</a>
+                        </div>
+                        <a href="#" class="back-to-square" data-return>返回广场 | Return</a>
+                    </div>
+                    <div class="header">
+                        <h1 style="font-size:1.3rem; font-weight:500; margin-bottom:1rem;">${escapeHtml(nickname)} · 全部广播</h1>
+                    </div>
+                    ${contentHtml}
+                    <div class="info-panel">
+                        <p>平台现有机制</p>
+                        <p>* 用户每天可以发出N条广播，但平台每天对每个用户只新增一条展示，其余放在队列里依次展示在平台。Dot2Dot是慢车马，是这氛围，也能省资源。</p>
+                        <p>* 用户的第21条广播被展示出来时，他的第1条会被删除，也就是FIFO，他的展示上限是20条。久远事，不留痕。</p>
+                        <div class="en">
+                            <p>Dot2Dot Algorithm:</p>
+                            <p>* Each user can send unlimited broadcasts daily, but the platform only surfaces one per user per day. The rest go into a queue and are shown over time. Dot2Dot moves at a slow pace — it's the vibe, and it saves resources.</p>
+                            <p>* When a user's 21st broadcast is shown, their 1st is deleted. FIFO, 20 posts max — old things leave no trace.</p>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('app').innerHTML = html;
+                attachUserLinks();
+                attachTitleClicks();
+                attachNavListeners();
+                attachReturnListener();
+                
+            } catch (error) {
+                console.error('加载失败:', error);
+                document.getElementById('app').innerHTML = '<div class="error">加载失败，请刷新重试</div>';
+            }
+        }
+
+        async function loadPostView() {
+            if (!pageUserId) {
+                document.getElementById('app').innerHTML = '<div class="error">缺少用户信息</div>';
+                return;
+            }
+            
+            if (!currentMsgId) {
+                // 如果没有指定 msg，获取该用户最新的一条广播
+                try {
+                    const response = await fetch(`${API_BASE}/user/${encodeURIComponent(pageUserId)}/messages`);
+                    const messages = await response.json();
+                    if (messages.length > 0) {
+                        messages.sort((a, b) => b.message_id.localeCompare(a.message_id));
+                        currentMsgId = messages[0].message_id;
+                    } else {
+                        document.getElementById('app').innerHTML = '<div class="error">该用户暂无广播</div>';
+                        return;
+                    }
+                } catch (e) {
+                    document.getElementById('app').innerHTML = '<div class="error">加载失败</div>';
+                    return;
+                }
+            }
+
+            try {
+                const [usersRes, messagesRes] = await Promise.all([
+                    fetch(`${API_BASE}/users`),
+                    fetch(`${API_BASE}/messages`)
+                ]);
+                allUsers = await usersRes.json();
+                allMessages = await messagesRes.json();
+
+                const message = allMessages.find(m => m.message_id === currentMsgId);
+                if (!message) {
+                    document.getElementById('app').innerHTML = '<div class="error">广播不存在</div>';
+                    return;
+                }
+
+                const relatedRes = await fetch(`${API_BASE}/related/${encodeURIComponent(currentMsgId)}`);
+                const relatedMessages = await relatedRes.json();
+
+                renderPostView(message, relatedMessages);
+            } catch (error) {
+                console.error('加载失败:', error);
+                document.getElementById('app').innerHTML = '<div class="error">加载失败，请刷新重试</div>';
+            }
+        }
+
+        function renderPostView(message, relatedMessages) {
+            const userNick = getNickname(message.user_id);
+            const parsed = parseMessageTag(message.message_tag);
+            const content = message.message_content || '';
+            
+            let relatedHtml = '';
+            if (relatedMessages && relatedMessages.length > 0) {
+                relatedHtml = `
+                    <div class="related-block">
+                        <div class="related-title">关联广播</div>
+                        ${relatedMessages.map(rel => {
+                            const relParsed = parseMessageTag(rel.message_tag);
+                            return `
+                                <div class="related-item">
+                                    <a href="#" class="user-link" data-user="${escapeHtml(rel.user_id)}">${escapeHtml(getNickname(rel.user_id))}</a> · ${escapeHtml(relParsed.tag)}<br>
+                                    <a href="#" class="related-link" data-msg="${escapeHtml(rel.message_id)}">${escapeHtml(rel.message_subject || '')}</a>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } else {
+                relatedHtml = `
+                    <div class="related-block">
+                        <div class="related-title">关联广播</div>
+                        <div class="text-small">暂无关联广播</div>
+                    </div>
+                `;
+            }
+
+            const html = `
+                <div class="top-bar">
+                    <div class="top-nav">
+                        <a href="#" data-view="post" class="active">广播详情 | Post Detail</a>
+                        <a href="#" data-view="mypost">全部历史 | All History</a>
+                    </div>
+                    <a href="#" class="back-to-square" data-return>返回广场 | Return</a>
+                </div>
+                <div class="broadcast-meta">
+                    <a href="#" class="user-link" data-user="${escapeHtml(message.user_id)}">${escapeHtml(userNick)}</a>
+                </div>
+                <div class="broadcast-tag">${escapeHtml(parsed.tag)}</div>
+                <div class="broadcast-title">${escapeHtml(message.message_subject || '')}</div>
+                <div class="broadcast-content">${escapeHtml(content).replace(/\n/g, '<br>')}</div>
+                ${relatedHtml}
+                <div class="info-panel">
+                    <p>平台现有机制</p>
+                    <p>* 平台没有审查和禁止特定信息，但已调用AI解析语义，将价值观不符的信息往下沉、少展示。这是概率问题，如果总体输入里优质信息不多，您仍会看得到有误导倾向的信息，请保留戒心。</p>
+                    <p>* 平台已禁用图片展示，这样可从源头上大幅减少诱惑。已在算法上鼓励以兴趣爱好为纽带建立点对点连接，但Dot2Dot只是起点，走向哪里靠个人，靠缘分。别急着得到什么，我们就能大幅免疫。</p>
+                    <div class="en">
+                        <p>Dot2Dot Algorithm:</p>
+                        <p>* No censorship or blocking of specific content. However, AI analyzes semantics and demotes value-inconsistent posts — they appear less often. This is probabilistic. If the overall input lacks quality information, you may still see misleading content. Stay vigilant.</p>
+                        <p>* Images are disabled — drastically reducing temptations at the source. The algorithm encourages interest-based, peer-to-peer connections. But that's just the starting point. Where it goes depends on you, and on fate. Don't rush for outcomes — that's how we stay largely immune.</p>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('app').innerHTML = html;
+
+            document.querySelectorAll('.user-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetUserId = link.getAttribute('data-user');
+                    if (targetUserId) {
+                        window.open(`./homepage.html?user=${encodeURIComponent(targetUserId)}`, '_blank');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.related-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const msgId = link.getAttribute('data-msg');
+                    if (msgId) {
+                        openDetailPage(msgId);
+                    }
+                });
+            });
+            
+            attachNavListeners();
+            attachReturnListener();
+        }
+
+        function attachUserLinks() {
+            document.querySelectorAll('.user-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetUserId = link.getAttribute('data-user');
+                    if (targetUserId) {
+                        window.open(`./homepage.html?user=${encodeURIComponent(targetUserId)}`, '_blank');
+                    }
+                });
+            });
+        }
+
+        function attachTitleClicks() {
+            document.querySelectorAll('.broadcast-title').forEach(title => {
+                title.addEventListener('click', (e) => {
+                    const msgId = title.getAttribute('data-msg-id');
+                    if (msgId) {
+                        openDetailPage(msgId);
+                    }
+                });
+            });
+        }
+
+        function attachNavListeners() {
+            document.querySelectorAll('.top-nav a').forEach(link => {
+                link.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const view = link.getAttribute('data-view');
+                    
+                    if (!pageUserId) {
+                        console.error('无法获取用户ID');
+                        return;
+                    }
+                    
+                    if (view === 'post') {
+                        // 切换到广播详情视图，需要获取一条广播
+                        try {
+                            const response = await fetch(`${API_BASE}/user/${encodeURIComponent(pageUserId)}/messages`);
+                            const messages = await response.json();
+                            if (messages.length > 0) {
+                                messages.sort((a, b) => b.message_id.localeCompare(a.message_id));
+                                const targetMsgId = messages[0].message_id;
+                                window.location.href = `./postdetail.html?msg=${encodeURIComponent(targetMsgId)}&user=${encodeURIComponent(pageUserId)}`;
+                            } else {
+                                window.location.href = `./postdetail.html?user=${encodeURIComponent(pageUserId)}&view=post`;
+                            }
+                        } catch (err) {
+                            console.error('获取最新广播失败:', err);
+                            window.location.href = `./postdetail.html?user=${encodeURIComponent(pageUserId)}&view=post`;
+                        }
+                    } else if (view === 'mypost') {
+                        window.location.href = `./postdetail.html?user=${encodeURIComponent(pageUserId)}&view=mypost`;
+                    }
+                });
+            });
+        }
+
+        function attachReturnListener() {
+            const returnBtn = document.querySelector('.back-to-square');
+            if (returnBtn) {
+                returnBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (pageUserId) {
+                        // 返回广场，平台视图在前（不加 view=me）
+                        window.location.href = `./homepage.html?user=${encodeURIComponent(pageUserId)}`;
+                    } else {
+                        window.location.href = `./homepage.html`;
+                    }
+                });
+            }
+        }
+
+        async function loadData() {
+            const viewParam = getUrlParam('view');
+            currentView = viewParam === 'mypost' ? 'mypost' : 'post';
+            
+            // 从 URL 获取 pageUserId（决定当前页面属于谁）
+            pageUserId = getUrlParam('user');
+            currentMsgId = getUrlParam('msg');
+            
+            // 如果没有 pageUserId 但有 msg，从 msg 获取 user_id
+            if (!pageUserId && currentMsgId) {
+                try {
+                    const messagesRes = await fetch(`${API_BASE}/messages`);
+                    const messages = await messagesRes.json();
+                    const message = messages.find(m => m.message_id === currentMsgId);
+                    if (message) {
+                        pageUserId = message.user_id;
+                    }
+                } catch (e) {
+                    console.error('获取用户失败:', e);
+                }
+            }
+            
+            if (currentView === 'mypost') {
+                await loadMypostView();
+            } else {
+                await loadPostView();
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

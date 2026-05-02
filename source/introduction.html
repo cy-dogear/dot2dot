@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Dot2Dot · 缘起与价值 | 舒阅读版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background-color: #f5f5f0;
+            color: #1a1a1a;
+            line-height: 1.5;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 28px;
+            border: 1px solid #e0e0dc;
+            padding: 2rem 1.8rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+        }
+
+        /* 质朴的版式，接近第一版的气质 */
+        .logo-section {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #efefea;
+            padding-bottom: 1rem;
+        }
+
+        .logo-icon {
+            font-size: 2.6rem;
+            letter-spacing: 4px;
+            margin-bottom: 0.25rem;
+        }
+
+        h1 {
+            font-size: 1.7rem;
+            font-weight: 500;
+            color: #2c5f2d;
+            margin-bottom: 0.25rem;
+        }
+
+        .tagline {
+            font-size: 0.85rem;
+            color: #6b6b6b;
+            margin-top: 0.25rem;
+        }
+
+        .section {
+            margin: 2rem 0 2rem 0;
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 500;
+            color: #2c5f2d;
+            margin-bottom: 1.25rem;
+            padding-left: 0.75rem;
+            border-left: 4px solid #2c5f2d;
+        }
+
+        /* ========== 英文区块：独立分段 + 优化行距 ========== */
+        .value-item {
+            margin-bottom: 2.2rem;
+        }
+
+        .value-num {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c5f2d;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.2px;
+        }
+
+        .value-text {
+            font-size: 1rem;
+            line-height: 1.55;
+            margin-bottom: 0.85rem;
+            color: #1a1a1a;
+            font-weight: 450;
+        }
+
+        .value-sub {
+            padding-left: 0.75rem;
+            border-left: 2px solid #e6e6e0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .sub-item {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #2b2b28;
+        }
+
+        /* 最后一个value-item的下方间距减少，保持视觉平衡 */
+        .value-item:last-child {
+            margin-bottom: 0.5rem;
+        }
+
+        /* ========== 中文缘起部分，优化段间距 ========== */
+        .plain-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .plain-list li {
+            margin-bottom: 1.3rem;
+            line-height: 1.6;
+            padding-left: 0.25rem;
+            position: relative;
+            font-size: 0.96rem;
+            color: #1f1f1c;
+        }
+
+        .plain-list li strong {
+            font-weight: 600;
+            color: #2c5f2d;
+        }
+
+        /* 登录卡片 */
+        .login-link-card {
+            background: #fafaf7;
+            border-radius: 40px;
+            border: 1px solid #e6e6e0;
+            padding: 0.9rem 1.2rem;
+            margin: 1.8rem 0 1.2rem 0;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .login-link-card a {
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-decoration: none;
+            color: #2c5f2d;
+            background-color: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .login-link-card a:hover {
+            text-decoration: underline;
+            background-color: transparent;
+            color: #1e4520;
+        }
+
+        .footer-note {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #efefea;
+            font-size: 0.75rem;
+            color: #a0a09a;
+            text-align: center;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #eaeae4;
+            margin: 1rem 0;
+        }
+
+        /* 移动端细腻调整 */
+        @media (max-width: 500px) {
+            .container {
+                padding: 1.5rem;
+            }
+            .section-title {
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
+            }
+            .value-text {
+                font-size: 0.95rem;
+                line-height: 1.55;
+            }
+            .sub-item {
+                font-size: 0.9rem;
+                line-height: 1.55;
+                margin-bottom: 0;
+            }
+            .value-sub {
+                padding-left: 0.6rem;
+                gap: 0.65rem;
+            }
+            .plain-list li {
+                font-size: 0.94rem;
+                margin-bottom: 1.2rem;
+                line-height: 1.55;
+            }
+        }
+
+        /* 可选：让中英文混排时更自然 */
+        .en-block, .sub-item, .value-text {
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="logo-section">
+        <div class="logo-icon">•✉•</div>
+        <h1>Dot2Dot</h1>
+        <div class="tagline">找得到点对点的连接，看得见精神生活内容</div>
+    </div>
+
+    <!-- 英文区块：完全独立分段 + 舒适行间距 -->
+    <div class="section">
+        <div class="section-title">Why you can find values here?</div>
+
+        <!-- 第1个主干点 -->
+        <div class="value-item">
+            <div class="value-num">1</div>
+            <div class="value-text">
+                This is a social platform created by Chinese people, but it is not exclusive to Chinese users.
+            </div>
+            <div class="value-sub">
+                <div class="sub-item">1.1 The content you post here will be semantically analyzed by AI and then randomly weighted for discovery and recommendation.</div>
+                <div class="sub-item">1.2 It can analyze Chinese, English, Russian, and even smaller languages.</div>
+                <div class="sub-item">1.3 Anyone can use it, and anyone has a chance to find people who share their interests and values here.</div>
+            </div>
+        </div>
+
+        <!-- 第2个主干点 -->
+        <div class="value-item">
+            <div class="value-num">2</div>
+            <div class="value-text">
+                User registration requires an email address, which is displayed by default on the user’s profile.
+            </div>
+            <div class="value-sub">
+                <div class="sub-item">2.1 By using this old-fashioned, non-real-time method of contact, we want users to feel more secure.</div>
+                <div class="sub-item">2.2 Want to use other ways to get in touch? Feel free to share them peer-to-peer yourself.</div>
+                <div class="sub-item">2.3 Don’t want to disclose your email at all? Then this place might not be for you.</div>
+            </div>
+        </div>
+
+        <!-- 第3个主干点（slogan + 澄清） -->
+        <div class="value-item">
+            <div class="value-num">3</div>
+            <div class="value-text">
+                The slogan is: <strong><em>“To find the dot-to-dot connection, to see a spiritual way of life.”</em></strong>
+            </div>
+            <div class="value-sub">
+                <div class="sub-item">3.1 Dot2Dot is a dating APP ... (❌)</div>
+                <div class="sub-item">3.2 Dot2Dot is similar to BBS function ... (❌)</div>
+                <div class="sub-item">3.3 Here I can demonstrate my spiritual life ... (✅)</div>
+                <div class="sub-item">3.4 Here I want “Resonant People” to contact me via email ... (✅)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录入口卡片 -->
+    <div class="login-link-card">
+        <a href="../login.html" target="_blank" rel="noopener noreferrer">
+            <span style="font-size:1.2rem;">•✉•</span> ⇐ Dot2Dot Login Link
+        </a>
+    </div>
+
+    <!-- 中文缘起部分，保持原有情怀但微调行距 -->
+    <div class="section">
+        <div class="section-title">Dot2Dot项目缘起：</div>
+        <ul class="plain-list">
+            <li><strong>•</strong> 我反感注意力经济的弊端，然并卵。那些社交平台在此潮流里采取纵容的态度；为了挣钱，不寒碜。可是，真善美在与假恶丑的博弈中，式微。</li>
+            <li><strong>•</strong> 好在来到2025年，我们能用上AI啦。本平台的最大特点是用AI解析用户发布内容，把价值观认同的内容更高概率的展示出来。</li>
+            <li><strong>•</strong> 然而，本平台没打算做“价值观暴君”，没有禁止那些不被鼓励的用户内容，只以概率区别对待。</li>
+            <li><strong>•</strong> 当湖水还浅的时候，您能看到湖底的岩石；随着源头活水越来越多流入，您将看到一湖海蓝！</li>
+            <li><strong>•</strong> 加入Dot2Dot吧，找到您的概率。</li>
+        </ul>
+    </div>
+
+    <div class="footer-note">
+        •✉•
+    </div>
+</div>
+</body>
+</html>

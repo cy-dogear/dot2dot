@@ -1,0 +1,206 @@
+<!-- 代码结构概述：
+head		页面配置元数据，构建用户能感知的页面元素
+body		login表单，内置JS脚本，信息检查，读写（表单存储数据所在的）服务器
+-->
+
+<!-- the line is for Dot2Dot-Login-Page-Check -->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Dot2Dot · 登录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background-color: #f5f5f0;
+            color: #1a1a1a;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            max-width: 400px;
+            width: 90%;
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid #e0e0dc;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 4px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #2c5f2d;
+        }
+
+        .tagline {
+            font-size: 0.85rem;
+            color: #6b6b6b;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #efefea;
+            padding-bottom: 1rem;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 40px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #2c5f2d;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e4520;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid #2c5f2d;
+            color: #2c5f2d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f0f5f0;
+        }
+
+        .footnote {
+            font-size: 0.7rem;
+            color: #a0a09a;
+            margin-top: 1.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.7rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e0e0dc;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            background: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <div class="logo">•✉•</div>
+    <h1>Dot2Dot</h1>
+    <div class="tagline">找得到点对点的连接，看得见精神生活内容</div>
+
+    <div id="loginForm">
+        <input type="email" id="emailInput" placeholder="注册邮箱（如 alice@gmail.com）">
+        <div class="btn-group">
+            <button class="btn btn-primary" id="loginBtn">Login / Register</button>
+            <button class="btn btn-secondary" id="guestBtn">Visitor Mode</button>
+        </div>
+        <div class="footnote">
+            访客浏览时页面链接不可用，但刷新页面可看到更多广播<br>
+            <br>
+            <a href="static/introduction.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">To English User：☞ Why you can find values here ...</a><br>
+            <a href="static/introduction.html" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">缘起：☞ 为什么做这平台？我们为什么要加入它？</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '/api';
+    
+    function getBasePath() {
+        const currentPath = window.location.href;
+        const lastSlash = currentPath.lastIndexOf('/');
+        if (lastSlash !== -1) {
+            return currentPath.substring(0, lastSlash + 1);
+        }
+        return './';
+    }
+
+    const BASE = getBasePath();
+
+    // 严格的邮箱格式检查
+    function isValidEmail(email) {
+        // 标准邮箱正则：允许字母、数字、点、下划线、加号、中划线，必须有 @，域名必须有至少一个点
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        return emailRegex.test(email);
+    }
+
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', async () => {
+            const emailInput = document.getElementById('emailInput');
+            let email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+            if (!email) {
+                alert('请输入邮箱地址');
+                return;
+            }
+            if (!isValidEmail(email)) {
+                alert('请输入有效的邮箱地址（例如 alice@gmail.com）');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    window.location.href = BASE + 'homepage.html?user=' + encodeURIComponent(email);
+                } else {
+                    alert('登录失败：' + (data.error || '未知错误'));
+                }
+            } catch (err) {
+                alert('无法连接服务器，请确保 webservice.py 已启动');
+                console.error(err);
+            }
+        });
+    }
+
+    const guestBtn = document.getElementById('guestBtn');
+    if (guestBtn) {
+        guestBtn.addEventListener('click', () => {
+            window.open(BASE + 'homepage.html?mode=guest', '_blank');
+        });
+    }
+</script>
+</body>
+</html>

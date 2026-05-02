@@ -1,0 +1,488 @@
+<!-- 代码结构概述（按标签层级 + script内部分段）：
+html	整个文档根元素
+	head	页面配置元数据区：字符集、视口、标题、全局样式定义
+	body	页面主体内容区
+		div.top-bar	固定顶栏：Logo、导航按钮（平台/我）、用户身份显示
+		div.main	动态主内容容器（#app）：由JS根据视图填充不同内容
+
+		（script就是代码分段所标记的“Part B2”）
+		script（Part B2）	内置JS脚本：数据加载与缓存、视图切换、搜索、渲染、交互绑定、防XSS
+			Part B2-1	全局变量定义（API_BASE、allUsers、allMessages、currentUserId等）+ 工具函数（getUrlParam、getNickname、parseMessageTag、openDetailPage、renderBroadcast）
+			Part B2-2	关联广播加载函数（loadRelatedBroadcasts）
+			Part B2-3	数据加载函数（loadData）+ 平台视图渲染函数（renderPlatform）
+			Part B2-4	“我”视图渲染函数（renderMeRecommend）
+			Part B2-5	交互绑定函数（attachUserLinks、attachRelatedLinks、escapeHtml、setView）+ DOMContentLoaded初始化
+-->
+            
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!-- homepage.html 代码分段标志 | Start of Part A-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>•✉• Dot2Dot · 找得到点对点的连接，看得见精神生活内容</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; background-color: #f5f5f0; color: #1a1a1a; line-height: 1.5; }
+        .top-bar { position: fixed; top: 0; left: 0; right: 0; background-color: #ffffff; border-bottom: 1px solid #e0e0dc; padding: 0.75rem 2rem; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 1rem; z-index: 100; }
+        .logo-area { display: flex; align-items: baseline; gap: 2rem; flex-wrap: wrap; }
+        .logo { font-size: 1.5rem; font-weight: 600; letter-spacing: 1px; color: #2c5f2d; text-decoration: none; }
+        .nav { display: flex; gap: 2rem; }
+        .nav a { text-decoration: none; color: #4a4a4a; font-weight: 500; padding: 0.25rem 0; border-bottom: 2px solid transparent; cursor: pointer; }
+        .nav a.active { color: #2c5f2d; border-bottom-color: #2c5f2d; }
+        .nav a:hover { color: #2c5f2d; }
+        .main { margin-top: 80px; padding: 2rem; max-width: 1000px; margin-left: auto; margin-right: auto; }
+        .card { background: #ffffff; border-radius: 16px; border: 1px solid #e6e6e2; padding: 1.5rem; margin-bottom: 1.8rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .card h2 { font-size: 1.3rem; font-weight: 500; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #efefea; }
+        .broadcast-item { padding: 1rem 0; border-bottom: 1px solid #f0f0ea; }
+        .broadcast-item:last-child { border-bottom: none; }
+        .broadcast-meta { font-size: 0.75rem; color: #8a8a8a; margin-bottom: 0.3rem; }
+        .broadcast-tag { display: inline-block; background-color: #e6f0e6; color: #2c5f2d; font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 0.5rem; }
+        .broadcast-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem; cursor: pointer; color: #2c5f2d; }
+        .broadcast-title:hover { text-decoration: underline; }
+        .broadcast-summary { font-size: 0.85rem; color: #4a4a4a; }
+        .user-link { text-decoration: none; color: #2c5f2d; font-weight: 500; cursor: pointer; }
+        .user-link:hover { text-decoration: underline; }
+        .related-link { text-decoration: none; color: #2c5f2d; cursor: pointer; }
+        .related-link:hover { text-decoration: underline; }
+        .related-block { background-color: #fafaf8; border-radius: 12px; padding: 0.75rem; margin-top: 0.75rem; }
+        .related-title { font-size: 0.7rem; text-transform: uppercase; color: #8a8a8a; margin-bottom: 0.5rem; letter-spacing: 0.5px; }
+        .related-item { border-left: 2px solid #e0e0dc; padding-left: 0.75rem; margin-bottom: 0.6rem; font-size: 0.85rem; }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .tag { background-color: #f0f0ea; padding: 0.25rem 0.85rem; border-radius: 30px; font-size: 0.8rem; color: #3a3a3a; cursor: pointer; }
+        .search-box { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
+        .search-box input { flex: 1; padding: 0.6rem; border: 1px solid #e0e0dc; border-radius: 10px; font-size: 0.9rem; }
+        .button { background-color: #2c5f2d; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 30px; cursor: pointer; font-size: 0.85rem; }
+        .button-outline { background-color: transparent; border: 1px solid #2c5f2d; color: #2c5f2d; }
+        .text-small { font-size: 0.8rem; color: #6b6b6b; }
+        .email-badge { font-family: monospace; background-color: #f0f0ea; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; }
+        .loading { text-align: center; padding: 2rem; color: #8a8a8a; }
+        .guest-notice { background-color: #fef4e8; border-left: 4px solid #e0a800; padding: 0.75rem 1rem; margin-bottom: 1.5rem; border-radius: 12px; font-size: 0.85rem; }
+        @media (max-width: 700px) { .top-bar { flex-direction: column; padding: 0.75rem; } .main { padding: 1rem; } }
+    </style>
+</head>
+<!-- homepage.html 代码分段标志 | End of Part A-->
+
+<!-- homepage.html 代码分段标志 | Start of Part B-->
+<body>
+    <!-- homepage.html 代码分段标志 | Start of Part B1-->
+    <div class="top-bar">
+        <div class="logo-area">
+            <span class="logo">•✉• Dot2Dot</span>
+            <div class="nav">
+                <a class="active" data-page="platform">平台 | Center</a>
+                <a data-page="me" class="nav-item-me">我 | Me</a>
+            </div>
+        </div>
+        <div class="text-small">
+            <span id="user-nick">加载中...</span>
+        </div>
+    </div>
+
+    <div class="main" id="app">
+        <div class="loading">加载中...</div>
+    </div>
+    <!-- homepage.html 代码分段标志 | End of Part B1-->
+
+    <!-- homepage.html 代码分段标志 | Start of Part B2-->
+    <script>
+        <!-- homepage.html，以下是代码分段的第B2-1段 -->
+        const API_BASE = '/api';
+        
+        let allUsers = [];
+        let allMessages = [];
+        let currentUserId = null;
+        let currentUserInfo = null;
+        let isGuest = false;
+
+        function getUrlParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        function getNickname(userId) {
+            const user = allUsers.find(u => u.user_id === userId);
+            return user ? user.nickname : (userId ? userId.split('@')[0] : '用户');
+        }
+
+        function parseMessageTag(messageTag) {
+            if (!messageTag) return { tag: '' };
+            const match = messageTag.match(/^(.*?)\s*\[(\d),(\d),(\d),(\d)\]$/);
+            if (match) {
+                return { tag: match[1] };
+            }
+            return { tag: messageTag };
+        }
+
+        function openDetailPage(messageId, userId) {
+            if (isGuest) return;
+            window.open(`./postdetail.html?msg=${encodeURIComponent(messageId)}&user=${encodeURIComponent(userId)}`, '_blank');
+        }
+
+        function renderBroadcast(message, showRelated = false) {
+            const userNick = getNickname(message.user_id);
+            const parsed = parseMessageTag(message.message_tag);
+            const summary = (message.message_content || '').substring(0, 50) + ((message.message_content || '').length > 50 ? '...' : '');
+            
+            let html = `
+                <div class="broadcast-item" data-msg-id="${message.message_id}">
+                    <div class="broadcast-meta">
+                        ${isGuest ? escapeHtml(userNick) : `<a href="#" class="user-link" data-user="${message.user_id}">${escapeHtml(userNick)}</a>`}
+                    </div>
+                    <div class="broadcast-tag">${escapeHtml(parsed.tag)}</div>
+                    <div class="broadcast-title" data-msg-id="${message.message_id}" data-user-id="${message.user_id}">${escapeHtml(message.message_subject || '')}</div>
+                    <div class="broadcast-summary">${escapeHtml(summary)}</div>
+            `;
+            
+            if (showRelated && !isGuest && message.message_id) {
+                html += `<div class="related-block" id="related-${message.message_id}">
+                    <div class="related-title">关联广播</div>
+                    <div class="text-small">加载中...</div>
+                </div>`;
+            }
+            
+            html += `</div>`;
+            return html;
+        }
+        <!-- homepage.html，以下是代码分段的第B2-2段 -->
+        async function loadRelatedBroadcasts(messageId, containerId) {
+            try {
+                const response = await fetch(`${API_BASE}/related/${encodeURIComponent(messageId)}`);
+                const related = await response.json();
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                if (related.length === 0) {
+                    container.innerHTML = `<div class="related-title">关联广播</div><div class="text-small">暂无关联广播</div>`;
+                    return;
+                }
+                
+                let html = `<div class="related-title">关联广播</div>`;
+                related.forEach(rel => {
+                    const relParsed = parseMessageTag(rel.message_tag);
+                    html += `
+                        <div class="related-item">
+                            <a href="#" class="user-link" data-user="${escapeHtml(rel.user_id)}">${escapeHtml(getNickname(rel.user_id))}</a> · ${escapeHtml(relParsed.tag)}<br>
+                            <a href="#" class="related-link" data-msg="${escapeHtml(rel.message_id)}" data-user="${escapeHtml(rel.user_id)}">${escapeHtml(rel.message_subject || '')}</a>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                attachUserLinks();
+                attachRelatedLinks();
+            } catch (error) {
+                console.error('加载关联广播失败:', error);
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = `<div class="related-title">关联广播</div><div class="text-small">加载失败</div>`;
+                }
+            }
+        }
+
+        async function loadData() {
+            try {
+                const [usersRes, messagesRes] = await Promise.all([
+                    fetch(`${API_BASE}/users`),
+                    fetch(`${API_BASE}/messages`)
+                ]);
+                allUsers = await usersRes.json();
+                allMessages = await messagesRes.json();
+                
+                const mode = getUrlParam('mode');
+                isGuest = (mode === 'guest');
+                
+                if (!isGuest) {
+                    currentUserId = getUrlParam('user');
+                    if (currentUserId) {
+                        currentUserInfo = allUsers.find(u => u.user_id === currentUserId);
+                    }
+                    if (!currentUserInfo && allUsers.length > 0) {
+                        currentUserId = allUsers[0].user_id;
+                        currentUserInfo = allUsers[0];
+                    }
+                }
+                
+                if (isGuest) {
+                    document.getElementById('user-nick').innerText = '访客';
+                    const meNav = document.querySelector('.nav a[data-page="me"]');
+                    if (meNav) meNav.style.display = 'none';
+                    const guestNotice = document.createElement('div');
+                    guestNotice.className = 'guest-notice';
+                    guestNotice.innerHTML = '您正在以访客身份浏览。登录后可查看完整内容并与其他用户互动。';
+                    const appDiv = document.getElementById('app');
+                    appDiv.parentNode.insertBefore(guestNotice, appDiv);
+                } else if (currentUserInfo) {
+                    document.getElementById('user-nick').innerText = currentUserInfo.nickname;
+                    const meNav = document.querySelector('.nav a[data-page="me"]');
+                    if (meNav) meNav.innerText = currentUserInfo.nickname;
+                } else {
+                    document.getElementById('user-nick').innerText = '用户';
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.getElementById('app').innerHTML = `<div class="card"><h2>无法连接服务器</h2><p>请确保已运行 python webservice.py</p></div>`;
+                return false;
+            }
+        }
+        <!-- homepage.html，以下是代码分段的第B2-3段 -->
+        async function renderPlatform() {
+            try {
+                const response = await fetch(`${API_BASE}/platform`);
+                const recommendations = await response.json();
+                
+                const html = `
+                    <div style="display: flex; flex-direction: column; gap: 1.8rem;">
+                        <div class="card">
+                            <h2>广场 | Square</h2>
+                            ${recommendations.length === 0 ? '<p class="text-small">暂无推荐广播</p>' : recommendations.map(msg => renderBroadcast(msg, false)).join('')}
+                            <div style="text-align: center; margin-top: 1rem;">
+                                <button class="button button-outline" id="refresh-platform-btn">换一批 | Refresh</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h2>搜索 | Search</h2>
+                            <div class="search-box">
+                                <input type="text" id="search-input" placeholder="昵称、邮箱或兴趣标签... | Nickname, Email or Interest Tag">
+                                <button class="button" id="search-submit">搜索 | Search</button>
+                            </div>
+                            <div id="search-results"></div>
+                            <div style="margin-top: 0.8rem;">
+                                <div class="text-small">可搜索：用户ID、昵称、兴趣标签；从未发布广播的用户不被显示。</div>
+                                <div class="text-small" style="color: #8a8a8a;">中文将按单字匹配，英文将按单词匹配</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h2>布告 | Dot2Dot Values</h2>
+                            <p><strong>「找得到点对点的连接，看得见精神生活内容」</strong></p>
+                            <p style="margin-bottom: 0.8rem;">如果您不需要“点对点”的连接，那么这平台不适合您，这里不鼓励“点对网”的连接（比如树洞、分享、记录、展示）。</p>
+                            
+                            <p class="text-small" style="margin-bottom: 0.8rem;">- 要基于兴趣爱好，这里的连接不要基于其它事（比如婚恋、长期关系、交易或交换）。缺少共通的精神生活和兴趣爱好，其它事很悬。</p>
+                            <p class="text-small" style="margin-bottom: 0.8rem;">- 兴趣爱好是指：没有必要做，但自主的喜欢做又可以经常做的事。“可以经常做”是重要限定条件，比如某人喜欢喝大酒，出于健康考虑便不可以经常做；比如某人喜欢约P，基于公序良俗不被允许经常做……那些，不是本平台所讲的兴趣爱好。</p>
+                            
+                            <p style="margin-bottom: 0.8rem;">本平台要有道德操守，不为谋利而纵容人性贪嗔痴，不追求用户留存、活跃度，追求“对用户有用” —— 用户觉得有用，用完离开了，也是平台的价值（欢迎再来，这里不设门槛）。</p>
+                            <p>• ✉ •  </p>
+                            <p class="text-small" style="margin-bottom: 0.8rem;">发布广播：从注册邮箱发送邮件到 <code>dot2dot@qq.com</code>；如果发件邮箱与注册邮箱不一致（比如在这里注册时写错了字母），将石沉大海；六个月未登录的账号将被清空，不在这里留痕。</p>
+                            <p class="text-small">您发出的有效广播队列将在AI解析后逐日展示在您的个人页面（All History），每日新增一条广播；但不一定出现在广场推荐，广场推荐采用随机加权算法，权重由AI解析判定。</p>
+                            </div>
+                        <div class="card">
+                            <h2>加入管理 | Let's Contribute</h2>
+                            <p style="margin-bottom: 0.8rem;">建议请发邮件到 <code>dot2dot@189.cn</code>，请附上您的具体主张。</p>
+                            <p style="margin-bottom: 0.8rem;">* 如果有缘能与您的主张相适配，平台当然要从善如流；还可以到Github共享源码、改进架构、提升用户体验，甚至把Dot2Dot迁移合并到别处，生长成另一种有价值内核的形式。</p>
+                            <p>* 目前资源有限，平台不够稳定健壮。但从发布之日起就打算以十年为单位的长期运行下去……受够了那些打擦边球的、骗财骗色的、自恋无聊的社交媒体使用体验！</p>
+                            
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('app').innerHTML = html;
+                
+                if (!isGuest) {
+                    document.getElementById('refresh-platform-btn')?.addEventListener('click', () => {
+                        renderPlatform();
+                        attachUserLinks();
+                        attachRelatedLinks();
+                    });
+                }
+                
+                const searchBtn = document.getElementById('search-submit');
+                const searchInput = document.getElementById('search-input');
+                const resultsDiv = document.getElementById('search-results');
+                const doSearch = async () => {
+                    const kw = searchInput.value.trim();
+                    if (!kw) { resultsDiv.innerHTML = ''; return; }
+                    try {
+                        const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(kw)}`);
+                        const results = await response.json();
+                        if (results.length === 0) {
+                            resultsDiv.innerHTML = '<div class="text-small">未找到</div>';
+                        } else {
+                            resultsDiv.innerHTML = results.map(msg => renderBroadcast(msg, false)).join('');
+                            attachUserLinks();
+                            attachRelatedLinks();
+                        }
+                    } catch (error) {
+                        console.error('搜索失败:', error);
+                        resultsDiv.innerHTML = '<div class="text-small">搜索失败，请重试</div>';
+                    }
+                };
+                if (searchBtn && !isGuest) {
+                    searchBtn.addEventListener('click', doSearch);
+                    searchInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+                }
+                
+                attachUserLinks();
+                attachRelatedLinks();
+            } catch (error) {
+                console.error('加载平台推荐失败:', error);
+                document.getElementById('app').innerHTML = '<div class="card"><p class="text-small">加载失败，请刷新重试</p></div>';
+            }
+        }
+        <!-- homepage.html，以下是代码分段的第B2-4段 -->
+        async function renderMeRecommend() {
+            if (isGuest || !currentUserId) {
+                document.getElementById('app').innerHTML = '<div class="card">请先登录</div>';
+                return;
+            }
+            
+            try {
+                const [userRes, recommendRes] = await Promise.all([
+                    fetch(`${API_BASE}/user/${encodeURIComponent(currentUserId)}`),
+                    fetch(`${API_BASE}/user/${encodeURIComponent(currentUserId)}/recommend`)
+                ]);
+                const userInfo = await userRes.json();
+                const recommendations = await recommendRes.json();
+                
+                const html = `
+                    <div class="card">
+                        <h2>${escapeHtml(userInfo.nickname)}</h2>
+                        <p><span class="email-badge">${escapeHtml(userInfo.user_id)}</span></p>
+                        <p class="text-small">欢迎给我写电邮，记得带上自我介绍，不要偷懒哦~</p>
+                    </div>
+
+                    <div class="card">
+                        <h2>我的广播 | My Posts</h2>
+                        ${recommendations.length === 0 ? '<p class="text-small">暂无广播</p>' : recommendations.map(msg => renderBroadcast(msg, true)).join('')}
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <button class="button button-outline" id="refresh-my-broadcasts">换一批 | Refresh</button>
+                            <button class="button button-outline" id="load-more-my-broadcasts" style="margin-left: 0.5rem;">全部 | All History</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>我的标签 | My Tags</h2>
+                        <div class="tag-list">
+                            ${userInfo.user_tag ? userInfo.user_tag.split(',').map(t => `<span style="display: inline-block; font-size: 0.8rem; color: #3a3a3a; margin-right: 0.5rem;">${escapeHtml(t.trim())}</span>`).join('') : '<span class="text-small">暂无标签</span>'}
+                        </div>
+                    </div>
+
+                    <div class="card" style="background-color: #fefce8;">
+                        <h2>如何发布广播 | Write Your Post</h2>
+                        <p>从您的注册邮箱 <strong>${escapeHtml(userInfo.user_id)}</strong> 发送邮件到 <code>dot2dot@qq.com</code></p>
+                    </div>
+                `;
+                
+                document.getElementById('app').innerHTML = html;
+                
+                if (recommendations.length > 0) {
+                    recommendations.forEach(msg => {
+                        const containerId = `related-${msg.message_id}`;
+                        loadRelatedBroadcasts(msg.message_id, containerId);
+                    });
+                }
+                
+                document.getElementById('refresh-my-broadcasts')?.addEventListener('click', () => {
+                    renderMeRecommend();
+                    attachUserLinks();
+                    attachRelatedLinks();
+                });
+                
+                document.getElementById('load-more-my-broadcasts')?.addEventListener('click', () => {
+                    window.open(`./postdetail.html?user=${encodeURIComponent(currentUserId)}&view=mypost`, '_blank');
+                });
+                
+                attachUserLinks();
+                attachRelatedLinks();
+            } catch (error) {
+                console.error('加载用户数据失败:', error);
+                document.getElementById('app').innerHTML = '<div class="card"><p class="text-small">加载失败，请刷新重试</p></div>';
+            }
+        }
+
+        function attachUserLinks() {
+            if (isGuest) return;
+            
+            document.querySelectorAll('.user-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetUserId = link.getAttribute('data-user');
+                    if (targetUserId) {
+                        window.open(`./homepage.html?user=${encodeURIComponent(targetUserId)}&view=me`, '_blank');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.broadcast-title').forEach(title => {
+                title.addEventListener('click', (e) => {
+                    const msgId = title.getAttribute('data-msg-id');
+                    const userId = title.getAttribute('data-user-id');
+                    if (msgId && userId) {
+                        openDetailPage(msgId, userId);
+                    }
+                });
+            });
+        }
+        <!-- homepage.html 代码分段标志 | Start of Part B2-5-->
+        function attachRelatedLinks() {
+            if (isGuest) return;
+            
+            document.querySelectorAll('.related-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const msgId = link.getAttribute('data-msg');
+                    const userId = link.getAttribute('data-user');
+                    if (msgId && userId) {
+                        openDetailPage(msgId, userId);
+                    }
+                });
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        let currentView = 'platform';
+        
+        function setView(view) {
+            if (isGuest && view === 'me') return;
+            currentView = view;
+            if (view === 'platform') {
+                renderPlatform();
+            } else {
+                renderMeRecommend();
+            }
+            
+            document.querySelectorAll('.nav a').forEach(a => {
+                const page = a.getAttribute('data-page');
+                if ((view === 'platform' && page === 'platform') || (view === 'me' && page === 'me')) {
+                    a.classList.add('active');
+                } else {
+                    a.classList.remove('active');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadData();
+            const viewParam = getUrlParam('view');
+            if (viewParam === 'me') {
+                setView('me');
+            } else {
+                setView('platform');
+            }
+            
+            if (!isGuest) {
+                document.querySelectorAll('.nav a').forEach(a => {
+                    a.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const page = a.getAttribute('data-page');
+                        if (page === 'platform') setView('platform');
+                        else if (page === 'me') setView('me');
+                    });
+                });
+            }
+        });
+        <!-- homepage.html 代码分段标志 | End of Part B2-5-->
+    </script>
+    <!-- homepage.html 代码分段标志 | End of Part B2-->
+</body>
+<!-- homepage.html 代码分段标志 | End of Part B-->
+</html>

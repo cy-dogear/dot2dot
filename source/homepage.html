@@ -1,0 +1,154 @@
+<!-- homepage.html -->
+<!-- Dot2Dot 主页 - 静态内容完整保留，JS 只负责动态填充广播列表 -->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>•✉• Dot2Dot · 找得到点对点的连接，看得见精神生活内容</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; background-color: #f5f5f0; color: #1a1a1a; line-height: 1.5; }
+        .top-bar { position: fixed; top: 0; left: 0; right: 0; background-color: #ffffff; border-bottom: 1px solid #e0e0dc; padding: 0.75rem 2rem; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 1rem; z-index: 100; }
+        .logo-area { display: flex; align-items: baseline; gap: 2rem; flex-wrap: wrap; }
+        .logo { font-size: 1.5rem; font-weight: 600; letter-spacing: 1px; color: #2c5f2d; text-decoration: none; }
+        .nav { display: flex; gap: 2rem; }
+        .nav a { text-decoration: none; color: #4a4a4a; font-weight: 500; padding: 0.25rem 0; border-bottom: 2px solid transparent; cursor: pointer; }
+        .nav a.active { color: #2c5f2d; border-bottom-color: #2c5f2d; }
+        .nav a:hover { color: #2c5f2d; }
+        .main { margin-top: 80px; padding: 2rem; max-width: 1000px; margin-left: auto; margin-right: auto; }
+        .card { background: #ffffff; border-radius: 16px; border: 1px solid #e6e6e2; padding: 1.5rem; margin-bottom: 1.8rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .card h2 { font-size: 1.3rem; font-weight: 500; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #efefea; }
+        .broadcast-item { padding: 1rem 0; border-bottom: 1px solid #f0f0ea; }
+        .broadcast-item:last-child { border-bottom: none; }
+        .broadcast-meta { font-size: 0.75rem; color: #8a8a8a; margin-bottom: 0.3rem; }
+        .broadcast-tag { display: inline-block; background-color: #e6f0e6; color: #2c5f2d; font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 20px; margin-bottom: 0.5rem; }
+        .broadcast-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem; cursor: pointer; color: #2c5f2d; }
+        .broadcast-title:hover { text-decoration: underline; }
+        .broadcast-summary { font-size: 0.85rem; color: #4a4a4a; }
+        .user-link { text-decoration: none; color: #2c5f2d; font-weight: 500; cursor: pointer; }
+        .user-link:hover { text-decoration: underline; }
+        .related-link { text-decoration: none; color: #2c5f2d; cursor: pointer; }
+        .related-link:hover { text-decoration: underline; }
+        .related-block { background-color: #fafaf8; border-radius: 12px; padding: 0.75rem; margin-top: 0.75rem; }
+        .related-title { font-size: 0.7rem; text-transform: uppercase; color: #8a8a8a; margin-bottom: 0.5rem; letter-spacing: 0.5px; }
+        .related-item { border-left: 2px solid #e0e0dc; padding-left: 0.75rem; margin-bottom: 0.6rem; font-size: 0.85rem; }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .search-box { display: flex; gap: 0.5rem; margin-bottom: 1.2rem; }
+        .search-box input { flex: 1; padding: 0.6rem; border: 1px solid #e0e0dc; border-radius: 10px; font-size: 0.9rem; }
+        .button { background-color: #2c5f2d; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 30px; cursor: pointer; font-size: 0.85rem; }
+        .button-outline { background-color: transparent; border: 1px solid #2c5f2d; color: #2c5f2d; }
+        .text-small { font-size: 0.8rem; color: #6b6b6b; }
+        .email-badge { font-family: monospace; background-color: #f0f0ea; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; }
+        .loading { text-align: center; padding: 2rem; color: #8a8a8a; }
+        .guest-notice { background-color: #fef4e8; border-left: 4px solid #e0a800; padding: 0.75rem 1rem; margin-bottom: 1.5rem; border-radius: 12px; font-size: 0.85rem; }
+        @media (max-width: 700px) { .top-bar { flex-direction: column; padding: 0.75rem; } .main { padding: 1rem; } }
+        
+        /* 视图切换控制 */
+        #platform-view { display: block; }
+        #me-view { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="logo-area">
+        <span class="logo">•✉• Dot2Dot</span>
+        <div class="nav">
+            <a class="active" data-page="platform">平台 | Center</a>
+            <a data-page="me" class="nav-item-me">我 | Me</a>
+        </div>
+    </div>
+    <div class="text-small">
+        <span id="user-nick">加载中...</span>
+    </div>
+</div>
+
+<div class="main" id="app">
+    <!-- 平台视图 -->
+    <div id="platform-view">
+        <div class="card">
+            <h2>广场 | Square</h2>
+            <div id="platform-list" class="broadcast-list">
+                <div class="loading">加载中...</div>
+            </div>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="button button-outline" id="refresh-platform-btn">换一批 | Refresh</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>搜索 | Search</h2>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="昵称、邮箱或兴趣标签... | Nickname, Email or Interest Tag">
+                <button class="button" id="search-submit">搜索 | Search</button>
+            </div>
+            <div id="search-results"></div>
+            <div style="margin-top: 0.8rem;">
+                <div class="text-small">可搜索：用户ID、昵称、兴趣标签；从未发布广播的用户不被显示。</div>
+                <div class="text-small" style="color: #8a8a8a;">中文将按单字匹配，英文将按单词匹配</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>布告 | Dot2Dot Values</h2>
+            <p><strong>「找得到点对点的连接，看得见精神生活内容」</strong></p>
+            <p style="margin-bottom: 0.8rem;">如果您不需要"点对点"的连接，那么这平台不适合您，这里不鼓励"点对网"的连接（比如树洞、分享、记录、展示）。</p>
+            
+            <p class="text-small" style="margin-bottom: 0.8rem;">- 要基于兴趣爱好，这里的连接不要基于其它事（比如婚恋、长期关系、交易或交换）。缺少共通的精神生活和兴趣爱好，其它事很悬。</p>
+            <p class="text-small" style="margin-bottom: 0.8rem;">- 兴趣爱好是指：没有必要做，但自主的喜欢做又可以经常做的事。"可以经常做"是重要限定条件，比如某人喜欢喝大酒，出于健康考虑便不可以经常做；比如某人喜欢约P，基于公序良俗不被允许经常做……那些，不是本平台所讲的兴趣爱好。</p>
+            
+            <p style="margin-bottom: 0.8rem;">本平台要有道德操守，不为谋利而纵容人性贪嗔痴，不追求用户留存、活跃度，追求"对用户有用" —— 用户觉得有用，用完离开了，也是平台的价值（欢迎再来，这里不设门槛）。</p>
+            <p>• ✉ •  </p>
+            <p class="text-small" style="margin-bottom: 0.8rem;">发布广播：从注册邮箱发送邮件到 <code>dot2dot@qq.com</code>；如果发件邮箱与注册邮箱不一致（比如在这里注册时写错了字母），将石沉大海；六个月未登录的账号将被清空，不在这里留痕。</p>
+            <p class="text-small">您发出的有效广播队列将在AI解析后逐日展示在您的个人页面（All History），每日新增一条广播；但不一定出现在广场推荐，广场推荐采用随机加权算法，权重由AI解析判定。</p>
+        </div>
+
+        <div class="card">
+            <h2>加入管理 | Let's Contribute</h2>
+            <p style="margin-bottom: 0.8rem;">建议请发邮件到 <code>dot2dot@189.cn</code>，请附上您的具体主张。</p>
+            <p style="margin-bottom: 0.8rem;">* 如果有缘能与您的主张相适配，平台当然要从善如流；还可以到Github共享源码、改进架构、提升用户体验，甚至把Dot2Dot迁移合并到别处，生长成另一种有价值内核的形式。</p>
+            <p>* 目前资源有限，平台不够稳定健壮。但从发布之日起就打算以十年为单位的长期运行下去……受够了那些打擦边球的、骗财骗色的、自恋无聊的社交媒体使用体验！</p>
+        </div>
+    </div>
+
+    <!-- 个人视图（我） -->
+    <div id="me-view">
+        <div id="user-info-card" class="card">
+            <h2 id="user-nickname">加载中...</h2>
+            <p><span class="email-badge" id="user-email">加载中...</span></p>
+            <p class="text-small">欢迎给我写电邮，记得带上自我介绍，不要偷懒哦~</p>
+        </div>
+
+        <div class="card">
+            <h2>我的广播 | My Posts</h2>
+            <div id="me-broadcasts-list" class="broadcast-list">
+                <div class="loading">加载中...</div>
+            </div>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="button button-outline" id="refresh-my-broadcasts">换一批 | Refresh</button>
+                <button class="button button-outline" id="load-more-my-broadcasts" style="margin-left: 0.5rem;">全部 | All History</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>我的标签 | My Tags</h2>
+            <div id="user-tags-container" class="tag-list">
+                <span class="text-small">加载中...</span>
+            </div>
+        </div>
+
+        <div class="card" style="background-color: #fefce8;">
+            <h2>如何发布广播 | Write Your Post</h2>
+            <p>从您的注册邮箱 <strong id="user-email-for-post">加载中...</strong> 发送邮件到 <code>dot2dot@qq.com</code></p><br>
+            * Dot2Dot服务器只读取文字信息，将忽略邮件中的图片或附件。<br>
+            * The server reads only the text from your emails. Images and attachments are not processed.
+        </div>
+    </div>
+</div>
+
+<script src="common.js"></script>
+<script src="homepage.js"></script>
+</body>
+</html>

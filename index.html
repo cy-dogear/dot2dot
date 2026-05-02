@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Dot2Dot Checking ...</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #f7f6f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, sans-serif;
+        }
+        .container { text-align: center; padding: 2rem; }
+        .big-text { font-size: 1rem;  color: #666; }
+        .countdown { font-size: 1rem; color: #666; margin-top: 1rem; }
+        .status { font-size: 1rem; color: #666; margin-top: 1rem; }
+        .retry-info { font-size: 1.4rem; font-weight: 600; color: #2c5f2d; margin-top: 2rem; }
+    </style>
+
+    <!-- ========== SEO / 机器检索增强 ========== -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+    <meta name="description" content="Dot2Dot - email-based connection platform for meaningful friendship. AI-algorithmic social media for authentic relationships.">
+    <meta name="keywords" content="Dot2Dot, meaningful friendship, email connection, social media, AI algorithm, friendship platform">
+    <meta name="language" content="en">
+    <meta name="author" content="Dot2Dot">
+    
+    <!-- 结构化数据（Google/Bing 优先读取） -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Dot2Dot",
+      "url": "https://cy-dogear.github.io/dot2dot/",
+      "description": "email-based connection for meaningful friendship. AI-algorithmic social media platform.",
+      "keywords": "meaningful friendship, email connection, AI social media",
+      "inLanguage": "en"
+    }
+    </script>
+    <!-- ========== SEO 增强结束 ========== -->
+     
+</head>
+<body>
+    <div class="container">
+        <div class="big-text">Checking Server Status ...⏳ </div>
+        <div class="countdown"> </div>
+        <div class="status" id="status"></div>
+        <div class="retry-info" id="retryInfo"></div>
+        
+    </div>
+
+    <script>
+        // ==================== 全局配置 ====================
+        const URL_1ST = './source/login.html';
+        const URL_2ND = './source/helpme.html';
+        const URL_3RD = './index.html';
+
+        window.location.href = URL_1ST;
+
+    </script>
+</body>
+</html>

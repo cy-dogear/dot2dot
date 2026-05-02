@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Dot2Dot · 有道德 · 慢车马 · 轻量化 | AI兴趣社交平台</title>
+    <style>
+        /* ---------- 极简但保留层级强调 ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", sans-serif;
+            line-height: 1.55;
+            color: #1a2c38;
+            padding: 2rem 1rem;
+        }
+
+        /* 主容器 — 干净、适度留白 */
+        .doc {
+            max-width: 960px;
+            margin: 0 auto;
+            background: transparent;
+        }
+
+        /* 全局链接风格 */
+        a {
+            color: #2b6c8f;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border 0.1s;
+        }
+        a:hover {
+            border-bottom-color: #2b6c8f;
+            color: #174e69;
+        }
+
+        /* 目录区域 (简约但视线聚焦) */
+        .toc-wrapper {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #eef2f6;
+        }
+        .toc-head {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #5b7f92;
+            margin-bottom: 0.75rem;
+        }
+        /* 平面目录，无链接的条目 */
+        .plain-toc {
+            display: flex;
+            flex-direction: column;  /* 新增：改为纵向排列 */
+            gap: 0.5rem;             /* 可选：减小行间距更紧凑 */
+            margin-bottom: 1rem;
+            list-style: none;
+            padding-left: 0;
+        }
+        .plain-toc li {
+            font-size: 0.9rem;
+            color: #2c6a82;
+            font-weight: 450;
+        }
+        .lang-switch {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.8rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .lang-switch a {
+            background: #f0f5f9;
+            padding: 0.2rem 1rem;
+            border-radius: 24px;
+            border-bottom: none;
+            color: #2d6f8b;
+        }
+        .lang-switch a:hover {
+            background: #e2edf4;
+            color: #16556e;
+        }
+
+        /* 一级标题（英文/中文大板块）– 显眼但不浮夸 */
+        h1, .english-master, .chinese-master {
+            font-size: 2rem;
+            font-weight: 620;
+            margin: 2rem 0 1rem 0;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #dce6ec;
+            color: #1a566e;
+            letter-spacing: -0.3px;
+        }
+
+        /* 二级标题（1. 2. 3. 等）—— 纲目清晰 */
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 570;
+            margin: 1.6rem 0 0.6rem 0;
+            color: #2b647c;
+            padding-left: 0;
+            border-left: none;
+        }
+
+        /* 三级标题 (1.1, 1.2, 设计中的减法 / AI筛选) */
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 540;
+            margin: 1.2rem 0 0.5rem 0;
+            color: #2a6f8a;
+        }
+
+        /* 四级小标题 (如 1.1 项目缘起等，使用 strong + 段落) */
+        .subheading {
+            font-size: 1.1rem;
+            font-weight: 570;
+            margin: 1rem 0 0.3rem 0;
+            color: #2d748f;
+        }
+
+        /* 正文层次 */
+        p {
+            margin: 0.6rem 0;
+            line-height: 1.55;
+        }
+        ul, ol {
+            margin: 0.5rem 0 0.8rem 1.5rem;
+        }
+        li {
+            margin: 0.3rem 0;
+        }
+        strong {
+            color: #1d5a72;
+            font-weight: 600;
+        }
+        blockquote {
+            margin: 0.8rem 0;
+            padding-left: 1rem;
+            border-left: 4px solid #cbdde6;
+            color: #2a5c71;
+            font-style: normal;
+            background: #fafdfe;
+        }
+
+        /* 表格简约优雅 */
+        .feature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.2rem 0;
+            background: #ffffff;
+            font-size: 0.9rem;
+        }
+        .feature-table th, .feature-table td {
+            border: 1px solid #e2eaf0;
+            padding: 0.6rem 0.8rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        .feature-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #1c5d74;
+        }
+
+        /* 分割线 */
+        hr {
+            margin: 1.8rem 0;
+            border: 0;
+            border-top: 1px solid #e6edf2;
+        }
+
+        /* 返回目录按钮 */
+        .back-link {
+            display: inline-block;
+            margin: 1.5rem 0 2rem;
+            font-size: 0.8rem;
+            font-weight: 450;
+            background: #f2f6fa;
+            padding: 0.25rem 1rem;
+            border-radius: 30px;
+            border-bottom: none;
+            color: #3f7f9a;
+        }
+        .back-link:hover {
+            background: #e6f0f6;
+            color: #1f627c;
+        }
+
+        /* 图片占位/滤镜 */
+        .image-placeholder {
+            background: #f9fbfd;
+            border: 1px solid #e2eaf0;
+            border-radius: 16px;
+            padding: 1rem;
+            text-align: center;
+            margin: 1rem 0;
+            font-size: 0.8rem;
+            color: #7193a6;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .inline-icon {
+            font-size: 0.9rem;
+        }
+
+        footer {
+            margin-top: 3rem;
+            font-size: 0.7rem;
+            text-align: center;
+            color: #95b3c2;
+            border-top: 1px solid #eef2f6;
+            padding-top: 1.5rem;
+        }
+        code {
+            background: #f4f8fc;
+            padding: 0.1rem 0.3rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+
+        /* 适应窄屏 */
+        @media (max-width: 700px) {
+            .doc {
+                padding: 0 0.2rem;
+            }
+            h1 {
+                font-size: 1.7rem;
+            }
+            h2 {
+                font-size: 1.35rem;
+            }
+            .plain-toc {
+                gap: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="doc">
+    <!-- 目录区：无链接纯文本列表 + 语言切换链接（无国旗） -->
+    <div class="toc-wrapper" id="top">
+        <div class="toc-head">📖 目录 | Contents</div>
+        <!-- 纯展示，无链接 -->
+        <ul class="plain-toc">
+            <li>1. 产品描述 | Product Description</li>
+            <li>2. 产品定位 | Positioning</li>
+            <li>3. 设计举措 | Concept Design</li>
+            <li>4. 总结 | Summary</li>
+        </ul>
+        <div class="lang-switch">
+            <a href="#en">Dot2Dot Readme in English</a>
+            <a href="#zh">Dot2Dot Readme 中文说明</a>
+        </div>
+        <!-- 隐藏返回锚点 #back -->
+        <span id="back" style="display: block; height: 0; visibility: hidden;"></span>
+    </div>
+
+    <!-- ================= 英文部分 ================= -->
+    <div id="en" style="scroll-margin-top: 1rem;">
+        <h1>Dot2Dot Readme in English</h1>
+        <blockquote>
+            <strong>An interest‑based connection platform powered by AI content filtering.</strong><br>
+            <em>有道德 · 慢车马 · 轻量化</em> – Find resonant people, not fasion.
+        </blockquote>
+        <p>🔗 <strong>Try it now</strong>: <a href="https://cy-dogear.github.io/dot2dot/" target="_blank" rel="noopener noreferrer">https://cy-dogear.github.io/dot2dot/</a></p>
+        <hr>
+
+        <h2 id="c1_en">1. Product Description</h2>
+        <p><strong>1.1</strong> Dot2Dot is a social platform that uses AI to semantically analyze user‑generated content.<br>
+        Content that aligns with healthy values is <strong>statistically more likely to be shown</strong>, while low‑quality or distracting content is naturally deprioritized – without being outright banned.</p>
+        <ul>
+            <li>Supports Chinese, English, Russian, and other languages.</li>
+            <li>Anyone can use it, and everyone has a fair chance to find people who share their interests and values.</li>
+        </ul>
+        <p><strong>1.2</strong> User registration requires an email address, which is displayed by default on the user’s profile.</p>
+        <ul>
+            <li>This old‑fashioned, non‑real‑time contact method is intentional – it helps users feel more secure.</li>
+            <li>Want to use another way to connect? Feel free to share it peer‑to‑peer.</li>
+            <li>If you are not willing to disclose an email address at all, this platform may not be for you.</li>
+        </ul>
+
+        <h2 id="c2_en">2. Positioning</h2>
+        <p><strong>“To find the dot‑to‑dot connection, to see a spiritual way of life.”</strong></p>
+        <ul>
+            <li>❌ Dot2Dot is <strong>not</strong> a dating app.</li>
+            <li>❌ It is <strong>not</strong> a traditional BBS.</li>
+            <li>✅ It <strong>is</strong> a place to share your spiritual life.</li>
+            <li>✅ It <strong>is</strong> a place where “resonant people” can contact you via email.</li>
+        </ul>
+
+        <h2 id="c3_en">3. Concept Design</h2>
+        <p>The product positioning is achieved through two complementary strategies:</p>
+        <h3>3.1 Subtraction</h3>
+        <p>We deliberately remove features that are not essential to the core mission:</p>
+        <ul>
+            <li>No profile pictures, gender, age, occupation, or follower/following lists.</li>
+            <li>No comments, likes, or private chat.</li>
+            <li>No images or videos – only plain text.</li>
+            <li>Each user can post multiple messages per day, but the platform only shows <strong>one new message per user per day</strong> (others are queued).</li>
+            <li>Each user has a <strong>maximum of 20 visible messages</strong> (FIFO – oldest are removed automatically).</li>
+            <li>Inactive accounts are deleted after prolonged absence (re‑registration is always free).</li>
+        </ul>
+        <h3>3.2 AI‑Powered Filtering</h3>
+        <p>Quality content is prioritized through a multi‑step AI pipeline:</p>
+        <ul>
+            <li><strong>Message tagging</strong> – semantic analysis of each post.</li>
+            <li><strong>User tagging</strong> – aggregation of a user’s content tendencies.</li>
+            <li><strong>User weighting</strong> – dynamic scoring based on value alignment.</li>
+            <li><strong>Discovery &amp; matching</strong> – show resonant content with higher probability.</li>
+        </ul>
+        <div class="image-placeholder">
+            📊 <em>Algorithm flow overview</em> — ( ./image/algorithm-flow.png )<br>
+            <span style="font-size:0.75rem;">示意图：AI语义解析 → 用户/内容标签 → 权重筛选 → 展示概率</span>
+        </div>
+
+        <h2 id="c4_en">4. Summary</h2>
+        <table class="feature-table">
+            <thead>
+                <tr><th>Feature</th><th>Dot2Dot</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Ethical</strong></td><td>No addiction loops, no engagement traps.</td></tr>
+                <tr><td><strong>Slow‑paced</strong></td><td>One visible post per user per day.</td></tr>
+                <tr><td><strong>Lightweight</strong></td><td>Pure text, no images/videos.</td></tr>
+                <tr><td><strong>AI‑driven</strong></td><td>Semantic filtering for quality content.</td></tr>
+                <tr><td><strong>Private by default</strong></td><td>Email‑based, no real‑time chat.</td></tr>
+            </tbody>
+        </table>
+        <blockquote>AI semantic parsing and filtering algorithms are the technical means to realize this product positioning.</blockquote>
+        <p>Initial implementation: <a href="https://cy-dogear.github.io/dot2dot/" target="_blank" rel="noopener noreferrer">https://cy-dogear.github.io/dot2dot/</a></p>
+        <p><strong>License</strong>: This project is open source. See the <a href="#">LICENSE</a> file for details.</p>
+        <a href="#back" class="back-link">↑ 返回目录 / Back to top</a>
+        <hr>
+    </div>
+
+    <!-- ================= 中文部分 ================= -->
+    <div id="zh" style="scroll-margin-top: 1rem;">
+        <h1>Dot2Dot Readme 中文说明</h1>
+        <p>🔗 <strong>立即体验</strong>: <a href="https://cy-dogear.github.io/dot2dot/" target="_blank" rel="noopener noreferrer">https://cy-dogear.github.io/dot2dot/</a></p>
+        <hr>
+
+        <h2 id="c1_zh">1. 产品描述</h2>
+        <div class="subheading">1.1 项目缘起</div>
+        <p>我反感注意力经济的弊端，然而抱怨并无用处。那些大型社交平台在此潮流中采取纵容态度——为了盈利，可以理解。但真、善、美在与假、恶、丑的博弈中往往处于劣势。</p>
+        <p>好在进入 2025 年，我们可以大规模使用 AI 了。<strong>Dot2Dot 的核心特点是用 AI 解析用户发布内容，将价值观趋同的内容以更高概率展示出来。</strong></p>
+        <p>但我们不做“价值观暴君”。不被鼓励的内容不会被直接禁止，只是出现的概率更低。</p>
+        <blockquote>当湖水还浅的时候，您能看到湖底的岩石；随着源头活水越来越多流入，您将看到一湖海蓝！</blockquote>
+        
+        <div class="subheading">1.2 核心理念</div>
+        <p>想做成这样的交友平台：<strong>有道德、慢车马、轻量化</strong>。</p>
+        <ul>
+            <li>不禁止特定信息，但调用 AI 解析语义，将价值观不符的信息往下沉、少展示（概率问题）。</li>
+            <li>禁用图片展示，从源头上大幅减少诱惑。在算法上鼓励以兴趣爱好为纽带建立点对点连接。这里只是起点，走向哪里靠个人、靠缘分。</li>
+        </ul>
+        <div class="subheading">1.3 主要特征</div>
+        <p>利用具备持续升级能力的 AI 调用方法去筛选用户权重和内容权重。</p>
+
+        <h2 id="c2_zh">2. 产品定位</h2>
+        <p><strong>「找得到点对点的连接，看得见精神生活内容」</strong></p>
+        <p>如果您不需要“点对点”的连接，那么这平台不适合您——这里不鼓励“点对网”的连接（如树洞、分享、记录、展示）。</p>
+        <ul>
+            <li>连接要基于 <strong>兴趣爱好</strong>，而不是婚恋、长期关系或交易。缺少共通的精神生活和兴趣爱好，其他事情很难持久。</li>
+            <li>“兴趣爱好”在这里被严格定义为：<strong>没有必要做、但自主喜欢做、且可以经常做的事情</strong>。<br>
+            “可以经常做”是重要限定条件。例如：喝大酒（影响健康）或约P（违背公序良俗）不在此列。</li>
+        </ul>
+        <p>本平台要有道德操守，不为谋利而纵容人性贪嗔痴，不追求用户留存、活跃度，追求 <strong>对用户有用</strong>。用户觉得有用，用完离开，也是平台的价值（欢迎再来，这里不设门槛）。</p>
+
+        <h2 id="c3_zh">3. 设计举措</h2>
+        <h3>3.1 做减法</h3>
+        <p>砍掉与核心定位不相关的功能：</p>
+        <ul>
+            <li>❌ 不显示关注/被关注列表、性别、年龄、头像、职业</li>
+            <li>❌ 无留言、评论、点赞、私聊功能</li>
+            <li>❌ 不支持图片和视频，仅纯文本</li>
+            <li>✅ 默认联系方式为 <strong>Email</strong>（显示在个人主页）</li>
+            <li>✅ 登录/注册不要求密码验证或邮箱验证（邮箱仅作为 user_id 白名单）</li>
+            <li>✅ 长期未登录的用户记录将被自动删除</li>
+            <li>✅ 每人每天最多展示 <strong>1 条</strong>广播（其余排队），总展示上限 <strong>20 条</strong>（FIFO）</li>
+        </ul>
+
+        <h3>3.2 以 AI 赋能的筛选机制</h3>
+        <p>让好内容优先呈现，实现 <strong>「找得到点对点的连接，看得见精神生活内容」</strong>。</p>
+        <ul>
+            <li>内容标签（Message_tag）</li>
+            <li>用户标签（User_tag）</li>
+            <li>用户权重（User_weight）</li>
+            <li>发现与匹配机制</li>
+        </ul>
+        <div class="image-placeholder">
+            🧠 <em>算法流程图概览</em> (./image/algorithm-flow.png)<br>
+            <span style="font-size:0.75rem;">AI语义解析 → 标签化 → 权重动态调整 → 展示概率优化</span>
+        </div>
+
+        <h2 id="c4_zh">4. 总结</h2>
+        <p>Dot2Dot 是一个：</p>
+        <ul>
+            <li><strong>有道德</strong> 的交友平台</li>
+            <li>利用 <strong>AI</strong> 筛选用户和内容权重</li>
+            <li>区别于那些默许或纵容擦边、成瘾机制、表演压力和轻度伤害内容的主流平台</li>
+            <li>适合需要 <strong>点对点兴趣交友</strong> 且注重健康价值观的人群</li>
+        </ul>
+        <p>初始实现：<a href="https://cy-dogear.github.io/dot2dot/" target="_blank" rel="noopener noreferrer">https://cy-dogear.github.io/dot2dot/</a></p>
+        <p><strong>许可证</strong>：本项目开源，详见 LICENSE 文件。</p>
+        <a href="#back" class="back-link">↑ 返回目录 / 回到顶部</a>
+    </div>
+
+    <footer>
+        Dot2Dot · 有道德 · 慢车马 · 轻量化 — 基于AI语义解析的兴趣交友平台
+    </footer>
+</div>
+
+<script>
+    (function() {
+        // 平滑滚动 + 保持锚点偏移优雅，无冗余装饰
+        const allAnchorLinks = document.querySelectorAll('a[href^="#"]');
+        allAnchorLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const hash = this.getAttribute('href');
+                if (hash === '#' || hash === '#/') return;
+                const targetId = hash.substring(1);
+                const targetElement = document.getElementById(targetId);
+                if (targetElement) {
+                    e.preventDefault();
+                    const offset = 20;
+                    const elementPosition = targetElement.getBoundingClientRect().top + window.scrollY;
+                    window.scrollTo({
+                        top: elementPosition - offset,
+                        behavior: 'smooth'
+                    });
+                    history.pushState(null, '', hash);
+                }
+            });
+        });
+        if (window.location.hash) {
+            const initialHash = window.location.hash.slice(1);
+            const initialTarget = document.getElementById(initialHash);
+            if (initialTarget) {
+                setTimeout(() => {
+                    const offset = 20;
+                    const pos = initialTarget.getBoundingClientRect().top + window.scrollY;
+                    window.scrollTo({ top: pos - offset, behavior: 'smooth' });
+                }, 100);
+            }
+        }
+    })();
+</script>
+</body>
+</html>
