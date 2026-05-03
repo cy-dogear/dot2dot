@@ -13,7 +13,7 @@
 # <span id="en">Dot2Dot Readme in English</span>
 
 > **An interest‑based connection platform powered by AI content filtering.**  
-> *有道德 · 慢车马 · 轻量化* – Find resonant people, not fasion.
+> *有道德 · 慢车马 · 轻量化* – Find resonant people, not fashion.
 
 🔗 **Try it now**: [https://cy-dogear.github.io/dot2dot/](https://cy-dogear.github.io/dot2dot/)
 
