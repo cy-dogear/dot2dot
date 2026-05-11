@@ -139,6 +139,9 @@ async function updateUser(email, nickname) {
     // 4. 存入 localStorage
     saveToLocalStorage(users, messages, user)
     
+    // 5. 保存本次登录的邮箱，方便下次自动填充
+    localStorage.setItem('dot2dot_last_email', email)
+    
     return { success: true, isNewUser: user.login_times === 1 }
 }
 
@@ -220,7 +223,16 @@ function init() {
         return
     }
     
-    // 否则显示登录表单
+    // 自动填充上次登录的邮箱
+    const lastEmail = localStorage.getItem('dot2dot_last_email')
+    const emailInput = document.getElementById('emailInput')
+    if (lastEmail && emailInput) {
+        emailInput.value = lastEmail
+        // 将光标移到末尾
+        emailInput.setSelectionRange(lastEmail.length, lastEmail.length)
+    }
+    
+    // 绑定事件
     const loginBtn = document.getElementById('loginBtn')
     const guestBtn = document.getElementById('guestBtn')
     
