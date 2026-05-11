@@ -415,8 +415,13 @@ async function init() {
         const postContainer = document.getElementById('post-detail-container')
         if (postContainer) postContainer.innerHTML = '<div class="loading">加载中...</div>'
         
-        // 加载数据（使用 common.js 中的 loadAllData）
-        await loadAllData()
+        // 加载数据（只从缓存读取，不自动请求 JSONBin）
+        const dataLoaded = await loadAllData()
+        if (!dataLoaded) {
+            console.warn('缓存无效或已过期，跳转到登录页')
+            window.location.href = './login.html'
+            return
+        }
         
         // 如果没有 msg 但有 user，从消息中获取最新一条
         if (!currentMsgId && currentUserId) {

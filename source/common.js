@@ -14,7 +14,7 @@ const STORAGE_KEYS = {
 }
 
 // 缓存有效期（10小时）
-const CACHE_DURATION = 10 * 60 * 60 * 1000
+const CACHE_DURATION = 0.01 * 60 * 60 * 1000
 
 // ========== 全局共享状态 ==========
 let allUsers = []
@@ -109,11 +109,11 @@ async function loadFromJSONBin() {
 }
 
 async function loadAllData() {
+    // 只从 localStorage 读取，无效则返回 false，不自动请求 JSONBin
     if (loadFromLocalStorage()) {
         return true
     }
-    await loadFromJSONBin()
-    return true
+    return false
 }
 
 // ========== 当前用户操作 ==========
