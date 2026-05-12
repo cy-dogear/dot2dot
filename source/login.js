@@ -229,7 +229,7 @@ function init() {
     if (lastEmail && emailInput) {
         emailInput.value = lastEmail
         // 将光标移到末尾
-        emailInput.setSelectionRange(lastEmail.length, lastEmail.length)
+        // emailInput.setSelectionRange(lastEmail.length, lastEmail.length)
     }
     
     // 绑定事件
