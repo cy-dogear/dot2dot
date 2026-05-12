@@ -584,6 +584,11 @@ async function init() {
         bindRefreshButtons()
         bindNavLinks()
         setupSearch()
+
+        // ========== 新增：启动可见性监听，切回标签页时检查缓存是否过期 ==========
+        startCacheCheckOnVisibility()
+        // ======================================================================
+               
         
     } catch (error) {
         console.error('初始化失败:', error)

@@ -141,3 +141,42 @@ function clearAllCache() {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER)
     localStorage.removeItem(STORAGE_KEYS.TIMESTAMP)
 }
+
+// ========== 可见性变化时检查缓存 ==========
+
+/**
+ * 检查缓存是否过期，过期则清除并跳转
+ * @returns {boolean} true=已过期并已跳转，false=未过期
+ */
+function checkCacheAndRedirect() {
+    const timestamp = localStorage.getItem(STORAGE_KEYS.TIMESTAMP)
+    if (!timestamp) return false
+    
+    const age = Date.now() - parseInt(timestamp)
+    if (age >= CACHE_DURATION) {
+        console.log('缓存已过期，正在清除并跳转...')
+        clearAllCache()
+        // 避免在登录页无限循环
+        if (!window.location.pathname.includes('login.html')) {
+            window.location.href = './login.html'
+        }
+        return true
+    }
+    return false
+}
+
+/**
+ * 启动可见性监听：每当页面从不可见变为可见时，检查缓存是否过期
+ */
+function startCacheCheckOnVisibility() {
+    // 只在非登录页启用（登录页有自己的跳转逻辑）
+    if (window.location.pathname.includes('login.html')) return
+    
+    // 监听页面可见性变化
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            console.log('页面变为可见，检查缓存...')
+            checkCacheAndRedirect()
+        }
+    })
+}
