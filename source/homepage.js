@@ -505,12 +505,16 @@ async function init() {
         const platformList = document.getElementById('platform-list')
         if (platformList) platformList.innerHTML = '<div class="loading">加载中...</div>'
         
-        // 加载数据（只从缓存读取，不自动请求 JSONBin）
-        const dataLoaded = await loadAllData()
-        if (!dataLoaded) {
-            console.warn('缓存无效或已过期，跳转到登录页')
-            window.location.href = './login.html'
-            return
+        // 加载数据（访客模式直接从 JSONBin 读取，普通用户只读缓存）
+        if (isGuest) {
+            await loadFromJSONBin()
+        } else {
+            const dataLoaded = await loadAllData()
+            if (!dataLoaded) {
+                console.warn('缓存无效或已过期，跳转到登录页')
+                window.location.href = './login.html'
+                return
+            }
         }
         
         // 获取当前用户完整信息（如果未从缓存获取到）
