@@ -14,7 +14,7 @@ const STORAGE_KEYS = {
 }
 
 // 缓存有效期（10小时）
-const CACHE_DURATION = 0.01 * 60 * 60 * 1000
+const CACHE_DURATION = 10 * 60 * 60 * 1000
 
 // ========== 全局共享状态 ==========
 let allUsers = []
